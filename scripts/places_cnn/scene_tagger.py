@@ -1,4 +1,6 @@
-# v0.2
+# This code is rework of places365: https://github.com/CSAILVision/places365
+# Depency: http://places2.csail.mit.edu/models_places365/W_sceneattribute_wideresnet18.npy
+# Version: 0.3
 
 import torch
 from torch.autograd import Variable as V
@@ -13,6 +15,7 @@ from PIL import Image
 from os import listdir
 from os.path import isdir, join
 import json
+import wideresnet
 
 
 def load_labels():
@@ -75,7 +78,6 @@ def returnTF():
 def load_model():
     model_file = 'wideresnet18_places365.pth.tar'
 
-    import wideresnet
     model = wideresnet.resnet18(num_classes=365)
     checkpoint = torch.load(model_file, map_location=lambda storage, loc: storage)
     state_dict = {str.replace(k,'module.',''): v for k,v in checkpoint['state_dict'].items()}
@@ -89,12 +91,12 @@ def load_model():
     return model
 
 
-path = "/Users/pavel/Sources/python/concepts/insta/photos_moscow"
-#areas = ["dorogomilovo-russia", "krasnaya-presnya-russia", "udelnaya-russia"]
+suffix = "hong_kong"
+path = "/Users/pavel/Sources/python/concepts/insta/photos_{}".format(suffix)
 
 scene_base = {}
 try:
-    with open('scenes_moscow.json', 'r') as f:
+    with open('scenes_{}.json'.format(suffix), 'r') as f:
         scene_base = json.load(f)
 except:
     pass
@@ -110,8 +112,8 @@ params = list(model.parameters())
 weight_softmax = params[-2].data.numpy()
 weight_softmax[weight_softmax<0] = 0
 
-areas = [f for f in listdir(path) if isdir(join(path, f))]
 cn = 0
+areas = [f for f in listdir(path) if isdir(join(path, f))]
 for area in areas:
     locations = os.listdir(os.path.join(path, area))
     for k, loc in enumerate(locations):
@@ -122,6 +124,7 @@ for area in areas:
             continue
 
         print(cn+1, loc)
+        
         try:
             pictures = os.listdir(os.path.join(path, area, loc))
         except:
@@ -164,7 +167,6 @@ for area in areas:
 
             scene_base[loc][pic] = scene_proporties
         
-        #print(scene_base)
         if k % 10 == 0:
-            with open('scenes_moscow.json', 'w') as fp:
+            with open('scenes_{}.json'.format(suffix), 'w') as fp:
                 json.dump(scene_base, fp, indent=4)
