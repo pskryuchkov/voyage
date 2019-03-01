@@ -14,13 +14,20 @@
         "zoom": 0
     },
     "berlin": {
-        "city_center": [52.523695, 13.417237],
+        "city_center": [52.517, 13.394],
         "opposite_city": "moscow",
         "language": "en",
         "osm_area_key": "suburb",
         "zoom": 0
     },
     "hong_kong": {
+        "city_center": [22.299000, 114.180000],
+        "opposite_city": "berlin",
+        "language": "en",
+        "osm_area_key": "suburb",
+        "zoom": 0
+    },
+    "rome": {
         "city_center": [22.299000, 114.180000],
         "opposite_city": "berlin",
         "language": "en",
