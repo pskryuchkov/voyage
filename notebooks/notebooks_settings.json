@@ -1,37 +1,32 @@
 {
     "spb": {
         "city_center": [59.9384, 30.3158],
-        "opposite_city": "moscow",
         "language": "ru",
-        "osm_area_key": "state_district",
         "zoom": 0
     },
     "moscow": {
         "city_center": [55.7535, 37.62],
-        "opposite_city": "spb",
         "language": "ru",
-        "osm_area_key": "state_district",
         "zoom": 0
     },
     "berlin": {
         "city_center": [52.517, 13.394],
-        "opposite_city": "moscow",
         "language": "en",
-        "osm_area_key": "suburb",
         "zoom": 0
     },
     "hong_kong": {
         "city_center": [22.299000, 114.180000],
-        "opposite_city": "berlin",
         "language": "en",
-        "osm_area_key": "suburb",
         "zoom": 0
     },
     "rome": {
-        "city_center": [22.299000, 114.180000],
-        "opposite_city": "berlin",
+        "city_center": [41.902689, 12.496176],
         "language": "en",
-        "osm_area_key": "suburb",
+        "zoom": 0
+    },
+    "tula": {
+        "city_center": [54.193122, 37.617348],
+        "language": "ru",
         "zoom": 0
     }
 }

@@ -2,29 +2,29 @@ from os.path import join
 
 # PATHS
 
-PROJECT_PATH = "/Users/pavel/Sources/python/concepts/insta/"
-PROJECT_PATH_NEW = '/Users/pavel/Sources/python/concepts/insta/public/'
+PROJECT_PATH = ".."
 
-TOP_PLACES_DIR = join(PROJECT_PATH, "scripts/top_places/")
+TOP_PLACES_DIR = join(PROJECT_PATH, "data/top_places")
 TOP_PLACES_PATH = join(TOP_PLACES_DIR, "top_places_{}.txt")
 
-PHOTOS_PATH = "public/photos/{}/"
+PHOTOS_PATH = "photos/{}/"
 
 LOCATIONS_FILE_DIR = join(PROJECT_PATH, PHOTOS_PATH)
 LOCATIONS_FILE_PATH = join(LOCATIONS_FILE_DIR, "loc_info.csv")
 
-ADRESSES_DIR = join(PROJECT_PATH_NEW, 'data/adresses/')
-ADRESSES_PATH = join(ADRESSES_DIR, 'adresses_{}.csv')
+ADDRESSES_DIR = join(PROJECT_PATH, 'data/addresses')
+ADDRESSES_PATH = join(ADDRESSES_DIR, 'addresses_{}.csv')
 
 SETTINGS_FILE = "notebooks_settings.json"
 
-FACES_FILE_DIR = "/Users/pavel/Sources/python/concepts/insta/scripts/face_detect/faces/"
+FACES_FILE_DIR = join(PROJECT_PATH, "data/faces")
 FACES_FILE_PATH = join(FACES_FILE_DIR, "faces_{}.json")
 
-WIKI_FILE_DIR = "../../../scripts/wiki"
+WIKI_FILE_DIR = join(PROJECT_PATH, "data/wiki")
 WIKI_FILE_PATH = join(WIKI_FILE_DIR, "wiki_located_items_{}.csv")
 
-SCENES_PATH = join(PROJECT_PATH, "cv_sandbox/photo_tagger/scenes_{}.json")
+SCENES_DIR = join(PROJECT_PATH, "data/scenes")
+SCENES_PATH = join(SCENES_DIR, "scenes_{}.json")
 
 # NOTEBOOK
 
@@ -51,5 +51,5 @@ N_SKIP = 0
 TOP_STREETS_VIS = 20
 MAX_HOVER_LEN = 25
 
-osm_area_key = 'area'
-STREET_COLUMN = 'route'
+AREA_KEY = 'area'
+STREET_KEY = 'route'

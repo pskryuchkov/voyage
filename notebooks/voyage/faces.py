@@ -24,7 +24,7 @@ def process_face_data(loc_file, faces_json, streets_table, geo_table):
     geo_table1['photos_total'] = total_counters
 
     data_dict = {}
-    for x in streets_table[consts.STREET_COLUMN][:consts.N_STREETS]:
+    for x in streets_table[consts.STREET_KEY][:consts.N_STREETS]:
         data_submatrix = []
         for row in geo_table1.itertuples():
             if row.route == x:

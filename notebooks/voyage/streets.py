@@ -12,13 +12,13 @@ from . import consts, shared, styles
 
 
 def load_geo_table(city):
-    geo_table = pd.read_csv(consts.ADRESSES_PATH.format(city),
+    geo_table = pd.read_csv(consts.ADDRESSES_PATH.format(city),
                             error_bad_lines=False)
 
     geo_table = geo_table.drop_duplicates()
 
-    geo_table[consts.STREET_COLUMN] = list(map(shared.title,
-                                               geo_table[consts.STREET_COLUMN].tolist()))
+    geo_table[consts.STREET_KEY] = list(map(shared.title,
+                                            geo_table[consts.STREET_KEY].tolist()))
 
     geo_table['longtitude'] = geo_table['longtitude'].astype(float)
     geo_table['latitude'] = geo_table['latitude'].astype(float)
@@ -26,9 +26,11 @@ def load_geo_table(city):
     return geo_table
 
 
-def count_activity(geo_table, shrink=True):
-    streets = geo_table[consts.STREET_COLUMN].tolist()
-    areas = geo_table[consts.osm_area_key].tolist()
+def count_activity(geo_table):
+    geo_table = geo_table[geo_table[consts.AREA_KEY] != 'None']
+
+    streets = geo_table[consts.STREET_KEY].tolist()
+    areas = geo_table[consts.AREA_KEY].tolist()
 
     street_locations_n = sorted(Counter(streets).items(),
                                 key=operator.itemgetter(1),
@@ -44,30 +46,28 @@ def count_activity(geo_table, shrink=True):
     streets = [x[0] for x in street_locations_n]
     street_activity = [x[1] for x in street_locations_n]
 
-    # FIXME: why 1?
-    if shrink:
-        areas = areas[1:consts.TOP_AREAS_N + 1]
-        area_activity = area_activity[1:consts.TOP_AREAS_N + 1]
+    areas = areas[:consts.TOP_AREAS_N]
+    area_activity = area_activity[:consts.TOP_AREAS_N]
 
-        streets = streets[1:consts.TOP_STREETS_N + 1]
-        street_activity = street_activity[1:consts.TOP_STREETS_N + 1]
+    streets = streets[:consts.TOP_STREETS_N]
+    street_activity = street_activity[:consts.TOP_STREETS_N]
 
     return streets, street_activity, areas, area_activity
 
 
 def count_streets_location(geo_table):
-    avg_coords_table = geo_table[[consts.STREET_COLUMN,
+    avg_coords_table = geo_table[[consts.STREET_KEY,
                                   'longtitude',
-                                  'latitude']].groupby(consts.STREET_COLUMN).agg(np.mean).reset_index()
+                                  'latitude']].groupby(consts.STREET_KEY).agg(np.mean).reset_index()
 
-    locations_counter_table = geo_table[consts.STREET_COLUMN].value_counts().reset_index()
-    locations_counter_table.columns = [consts.STREET_COLUMN, 'counter']
+    locations_counter_table = geo_table[consts.STREET_KEY].value_counts().reset_index()
+    locations_counter_table.columns = [consts.STREET_KEY, 'counter']
 
     streets_table = pd.merge(avg_coords_table,
                              locations_counter_table,
-                             on=consts.STREET_COLUMN).sort_values(by='counter', ascending=False)
+                             on=consts.STREET_KEY).sort_values(by='counter', ascending=False)
 
-    streets_table = streets_table[streets_table[consts.STREET_COLUMN] != 'None']
+    streets_table = streets_table[streets_table[consts.STREET_KEY] != 'None']
 
     return streets_table
 

@@ -166,44 +166,45 @@ def draw_tags_delta(delta_bar_x, delta_bar_y):
     py.iplot(fig, show_link=False)
 
 
-# FIXME: refactorin
-def get_locations_scenes(scene_data):
-    dd = []
-    for location_id in list(scene_data.keys()):
-        scene_values = Counter()
-        for photo in scene_data[location_id]:
-            for category, value in scene_data[location_id][photo]['categories'].items():
-                scene_values[category] += float(value)
-        dd.append([location_id, scene_values])
+def get_locations_scenes(photos_scenes):
+    locations_scenes = {}
+    for location_id in photos_scenes:
 
-    dd1 = []
-    for x in dd:
-        dd1.append([x[0]] + [x[1][tag] for tag in consts.SELECTED_TAGS])
+        accumulated_scenes_values = Counter()
+        for photo in photos_scenes[location_id]:
+            for category, value in photos_scenes[location_id][photo]['categories'].items():
+                accumulated_scenes_values[category] += float(value)
 
-    tags_table = pd.DataFrame(dd1)
-    tags_table.columns = ["id"] + consts.SELECTED_TAGS
+        locations_scenes[location_id] = accumulated_scenes_values
 
-    return tags_table
+    raw_scenes_table = []
+    for location_id in locations_scenes:
+        selected_scenes = [locations_scenes[location_id][tag] for tag in consts.SELECTED_TAGS]
+        table_line = [location_id] + selected_scenes
+        raw_scenes_table.append(table_line)
+
+    columns = ["id"] + consts.SELECTED_TAGS
+    return pd.DataFrame(raw_scenes_table, columns=columns)
 
 
-# FIXME
 def calculate_street_vectors(scene_data, geo_table,
                              streets_list, sorted_tags):
+    scenes_table = get_locations_scenes(scene_data)
 
-    keywords_table = get_locations_scenes(scene_data)
     street_vectors = []
-    for s in streets_list:
-        sv = np.zeros(consts.N_SCENES)
-        locations_id = geo_table[geo_table[consts.STREET_COLUMN] == s]\
+    for street in streets_list:
+        accumulated_vector = np.zeros(consts.N_SCENES)
+        locations_id = geo_table[geo_table[consts.STREET_KEY] == street]\
                                 ['id'].astype(str)
         for loc in locations_id:
-            if loc in keywords_table.id.values:
-                is_relevant = keywords_table['id'] == loc
-                relevant_row = keywords_table[is_relevant][sorted_tags]
-                location_vector = relevant_row.iloc[0].tolist()
-                sv += location_vector
+            if loc in scenes_table.id.values:
+                is_relevant_row = (scenes_table['id'] == loc)
+                relevant_row = scenes_table[is_relevant_row][sorted_tags]
 
-        street_vectors.append(sv)
+                location_vector = relevant_row.iloc[0].tolist()
+                accumulated_vector += location_vector
+
+        street_vectors.append(accumulated_vector)
 
     return np.array(street_vectors)
 

@@ -27,7 +27,11 @@ def remove_stopwords(df, column, stopwords):
     return df
 
 
-def get_wiki_locations(wiki_df):
+def get_wiki_locations(wiki_df, min_locations=20):
+    if wiki_df.dropna(subset=['roads']).shape[0] < min_locations:
+        print("WARNING: too few wiki locations")
+        return pd.DataFrame()
+
     wiki_df['street'] = wiki_df['roads']
     wiki_df = wiki_df.drop(columns=['roads'])
     wiki_df = wiki_df[wiki_df['street'] != '']
@@ -71,18 +75,18 @@ def get_insta_dict(insta_df, geo_table):
     insta_df.id = insta_df.id.astype(int)
     geo_table.id = geo_table.id.astype(int)
     photos_top_streets = pd.merge(insta_df, geo_table, on='id') \
-        [[consts.STREET_COLUMN, 'photos_counter']]
+        [[consts.STREET_KEY, 'photos_counter']]
 
-    photos_top_streets = photos_top_streets.groupby([consts.STREET_COLUMN]) \
+    photos_top_streets = photos_top_streets.groupby([consts.STREET_KEY]) \
         .sum() \
         .sort_values(by=['photos_counter'], ascending=False) \
         .reset_index()
 
-    photos_top_streets = photos_top_streets[photos_top_streets[consts.STREET_COLUMN] != 'None']
+    photos_top_streets = photos_top_streets[photos_top_streets[consts.STREET_KEY] != 'None']
     photos_top_streets['photos_counter'] = \
         photos_top_streets['photos_counter'].astype(int)
 
-    return {x: y for x, y in zip(photos_top_streets[consts.STREET_COLUMN].tolist(),
+    return {x: y for x, y in zip(photos_top_streets[consts.STREET_KEY].tolist(),
                                  photos_top_streets['photos_counter'] \
                                  .tolist())}
 
@@ -129,32 +133,36 @@ def draw_insta_wiki_scatter(scatter_x1, scatter_y1, scatter_labels1):
                        mode='markers',
                        hoverinfo='text',
                        name='huge',
-                       textfont=dict(size=8, color='lightgrey'),
-                       marker=dict(color='dodgerblue', opacity=0.8)),
-            ]
+                       textfont=dict(size=style.FONT_SIZE,
+                                     color=style.FONT_COLOR),
+                       marker=dict(color=style.MARKER_COLOR,
+                                   opacity=style.MARKER_OPACITY))]
 
     med_x = np.median(scatter_x1)
     med_y = np.median(scatter_y1)
+
+    lines_style = dict(color=style.LINE_COLOR,
+                       width=style.LINE_WIDTH,
+                       dash=style.LINE_STYLE)
 
     shapes = [dict(type='line',
                    xref='x', yref='paper',
                    x0=med_x, y0=0,
                    x1=med_x, y1=1,
-                   line=dict(color='grey', width=2, dash='dash')),
+                   line=lines_style),
               dict(type='line',
                    xref='paper', yref='y',
                    x0=0, y0=med_y,
                    x1=1, y1=med_y,
-                   line=dict(color='grey', width=2, dash='dash'))]
+                   line=lines_style)]
 
     layout = go.Layout(width=style.PLOT_WIDTH,
                        height=style.PLOT_HEIGHT,
-                       margin=go.layout.Margin(t=30, b=50, l=50, r=30),
-                       xaxis=dict(
-                           title='insta', type='log',
-                       ),
-                       yaxis=dict(
-                           title='wiki', type='log'),
+                       margin=style.MARGIN,
+                       xaxis=dict(title='insta',
+                                  type=style.AXES_TYPE),
+                       yaxis=dict(title='wiki',
+                                  type=style.AXES_TYPE),
                        hovermode='closest',
                        shapes=shapes,
                        showlegend=False)

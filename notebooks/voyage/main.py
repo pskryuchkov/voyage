@@ -11,33 +11,41 @@ pd.options.display.float_format = '{:.4g}'.format
 py.init_notebook_mode(connected=True)
 
 
-def load_settings(city):
-    nb_settings = data.load_json(consts.SETTINGS_FILE)
+def get_settings(city):
+    def load_settings(city):
+        nb_settings = data.load_json(consts.SETTINGS_FILE)
 
-    class Settings:
-        city_center = nb_settings[city]['city_center']
-        opposite_city = nb_settings[city]['opposite_city']
-        language = nb_settings[city]['language']
+        class Settings:
+            city_name = city
+            city_center = nb_settings[city]['city_center']
+            language = nb_settings[city]['language']
 
-        def __init__(self):
-            pass
+            def __init__(self):
+                pass
 
-    return Settings
+        return Settings
+
+    if not hasattr(get_settings, '_settings'):
+        get_settings._settings = load_settings(city)
+    elif city != get_settings._settings.city_name:
+        get_settings._settings = load_settings(city)
+
+    return get_settings._settings
 
 
 def city_map(dataset):
-    settings = load_settings(dataset.city)
+    settings = get_settings(dataset.city)
 
     streets_table = streets.count_streets_location(dataset.geo_table)
 
     streets.draw_city_map(streets_table['longtitude'].tolist(),
                           streets_table['latitude'].tolist(),
-                          streets_table[consts.STREET_COLUMN],
+                          streets_table[consts.STREET_KEY],
                           streets_table['counter'], settings.city_center)
 
 
 def street_area_combine(dataset):
-    settings = load_settings(dataset.city)
+    settings = get_settings(dataset.city)
 
     streets_list, street_activity, areas, area_activity = \
                                 streets.count_activity(dataset.geo_table)
@@ -49,7 +57,7 @@ def street_area_combine(dataset):
                                           [sum(area_activity[consts.N_AREAS_VISUALIZED + 1:])]
     areas_labels_short = areas[:consts.N_AREAS_VISUALIZED] + [consts.OTHER_LABEL]
 
-    streets.draw_street_area_combine(streets_table_short[consts.STREET_COLUMN],
+    streets.draw_street_area_combine(streets_table_short[consts.STREET_KEY],
                                      streets_table_short['counter'],
                                      streets_table_short['latitude'],
                                      streets_table_short['longtitude'],
@@ -60,6 +68,10 @@ def street_area_combine(dataset):
 
 def insta_wiki_scatter(dataset):
     wiki_df = wiki.get_wiki_locations(dataset.wiki_table)
+
+    if wiki_df.empty:
+        return
+
     street_wiki_dict = wiki.get_street_wiki_views(wiki_df)
 
     street_insta_dict = wiki.get_insta_dict(dataset.top_places_table,
@@ -67,7 +79,7 @@ def insta_wiki_scatter(dataset):
 
     street_locs_wiki = wiki.get_street_locs(wiki_df)
 
-    # FIXME: refactoring needed
+    # FIXME: refactoring
     wiki_data = wiki.get_wiki_data(street_insta_dict,
                                    street_wiki_dict,
                                    street_locs_wiki)
@@ -78,7 +90,7 @@ def insta_wiki_scatter(dataset):
 
 
 def face_scatter(dataset):
-    settings = load_settings(dataset.city)
+    settings = get_settings(dataset.city)
     streets_table = streets.count_streets_location(dataset.geo_table)
 
     data_dict, street_locations = faces.process_face_data(dataset.loc_info,
@@ -108,7 +120,7 @@ def tags_delta(dataset, opposite_dataset):
 
 
 def streets_features(dataset):
-    settings = load_settings(dataset.city)
+    settings = get_settings(dataset.city)
 
     sorted_scenes = [x[0] for x in scenes.selected_scenes_rates(dataset.photos_scenes)]
 
@@ -127,8 +139,8 @@ def streets_features(dataset):
 
 
 def tagged_city_map(dataset):
-    streets_list, _, _, _ = streets.count_activity(dataset.geo_table,
-                                                   shrink=False)
+    streets_list, _, _, _ = streets.count_activity(dataset.geo_table)
+
     # FIXME: not obvious usage
     sorted_scenes = [x[0] for x in scenes.selected_scenes_rates(dataset.photos_scenes)]
 
@@ -145,13 +157,16 @@ def tagged_city_map(dataset):
 
     streets_table = streets.count_streets_location(dataset.geo_table)
 
-    settings = load_settings(dataset.city)
+    settings = get_settings(dataset.city)
 
     tags_labels = []
-    for x in streets_table[consts.STREET_COLUMN]:
-        tag_value = street2tag[x][1]
-        if np.isfinite(tag_value):
-            tags_labels.append("{} {:.2f}".format(*street2tag[x]))
+    for x in streets_table[consts.STREET_KEY]:
+        if x in street2tag:
+            tag_value = street2tag[x][1]
+            if np.isfinite(tag_value):
+                tags_labels.append("{} {:.2f}".format(*street2tag[x]))
+        else:
+            pass
 
     scenes.draw_tagged_city_map(settings.city_center,
                                 streets_table['longtitude'],

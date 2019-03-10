@@ -43,7 +43,16 @@ class StreetAreaCombine:
 
 class InstaWikiScatterStyle:
     PLOT_HEIGHT = 400
-    PLOT_WIDTH = 550 
+    PLOT_WIDTH = 550
+    MARKER_OPACITY = 0.8
+    MARKER_COLOR = 'dodgerblue'
+    FONT_COLOR = 'lightgrey'
+    FONT_SIZE = 8
+    LINE_STYLE = 'dash'
+    LINE_COLOR = 'grey'
+    LINE_WIDTH = 2
+    AXES_TYPE = 'log'
+    MARGIN = go.layout.Margin(t=30, b=50, l=50, r=30)
 
 
 class FaceScatterStyle:
