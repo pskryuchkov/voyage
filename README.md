@@ -23,6 +23,7 @@ Scripts must be run as follows
 ### List of  notebooks
 * [Moscow](https://nbviewer.jupyter.org/github/pskryuchkov/voyage/blob/master/notebooks/moscow.ipynb) 
 * [Saint Petersburg](https://nbviewer.jupyter.org/github/pskryuchkov/voyage/blob/master/notebooks/spb.ipynb) 
+* [Tula](https://nbviewer.jupyter.org/github/pskryuchkov/voyage/blob/master/notebooks/tula.ipynb) 
 * [Berlin](https://nbviewer.jupyter.org/github/pskryuchkov/voyage/blob/master/notebooks/berlin.ipynb)
 * [Rome](https://nbviewer.jupyter.org/github/pskryuchkov/voyage/blob/master/notebooks/rome.ipynb) 
 * [Hong Kong](https://nbviewer.jupyter.org/github/pskryuchkov/voyage/blob/master/notebooks/hong_kong.ipynb)
