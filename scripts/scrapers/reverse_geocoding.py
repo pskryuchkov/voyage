@@ -1,6 +1,8 @@
+# Locations coordinates reverse geocoding (by Google API)
+# Run after 'photos_scraper.py'
+# Depencies: Google API key
+
 import requests
-from bs4 import BeautifulSoup
-from time import sleep
 import csv
 from os.path import isfile
 import sys
@@ -45,19 +47,32 @@ def get_address(google_api_response, street_key, area_key):
     return street, area
 
 
+def load_api_key():
+    with open("google.token", "r") as f:
+        data = f.readline()
+    return data.strip()
+
+
+def load_settings(city):
+    with open("reverse_geocoding.json", "r") as f:
+        data = json.load(f)
+    return data[city]
+
+
 args = init_arguments()
 CITY = args['city']
-PATH = "/Users/pavel/Sources/python/concepts/insta/public/photos/{}/".format(CITY)
-REQUEST_STR = "https://maps.googleapis.com/maps/api/geocode/json?latlng={0},{1}&key={2}"
-ADDRESSES_FILENAME = "../data/adresses/adresses_{}.csv".format(CITY)
+PATH = "../../photos/{}/".format(CITY)
+REQUEST_STR = "https://maps.googleapis.com/maps/api/geocode/json?latlng={0},{1}&key={2}&language=ru"
+ADDRESSES_FILENAME = "../../data/addresses/addresses_{}.csv".format(CITY)
 SAVE_INTERVAL = 50
 
-api_key = "AIzaSyCMoT57rB8xLg5Kba9NJ5BfPqH2GFWh_n0"
+API_KEY = load_api_key()
 
-street_key = 'route'
-area_key = 'neighborhood' # or 'administrative_area_level_3' or 'sublocality_level_1'
+STREET_KEY = 'route'
+AREA_KEY = load_settings(CITY)
 
-loc_file = list(map(lambda x: x.strip().split(","), open(PATH + "loc_info.csv", "r").readlines()[1:]))
+loc_file = list(map(lambda x: x.strip().split(","),
+                    open(PATH + "loc_info.csv", "r").readlines()[1:]))
 
 coordinates = []
 for line in loc_file:
@@ -84,11 +99,11 @@ for j, loc in enumerate(coordinates):
 
     print(j+1, len(coordinates))
 
-    r = requests.get(REQUEST_STR.format(lat, lng, api_key))
+    r = requests.get(REQUEST_STR.format(lat, lng, API_KEY))
 
     geo_json = json.loads(r.text)
 
-    route, area = get_address(geo_json, street_key, area_key)
+    route, area = get_address(geo_json, STREET_KEY, AREA_KEY)
 
     addresses.append([id, name, lat, lng, route, area])
 

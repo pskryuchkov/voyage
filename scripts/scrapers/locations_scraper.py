@@ -1,11 +1,17 @@
-# v0.3
+# Scrape instagram location list
+# Run first
 
-from math import sin, cos, sqrt, atan2, radians, asin
+# Depencies: Chrome driver
+
+from math import sin, cos, sqrt, radians, asin
 from selenium.webdriver import Chrome, ChromeOptions
 from random import randint, shuffle
 from bs4 import BeautifulSoup
+import json
 import numpy as np
 import warnings
+import argparse
+import sys
 import time
 import re
 import os
@@ -14,29 +20,24 @@ from os import listdir
 from os.path import isfile, join
 
 
-# center = [59.9384, 30.3158] # palace square
-#center = [52.523695, 13.417237] # alexanderplatz
-# center = [55.7535, 37.62] # red square
-#center = [41.393011, 2.161416] # barcelona
-#center = [22.257328, 114.198523] # hong kong 
-center = [41.902689, 12.496176] # rome
+def init_arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-c", "--city", required=True, help="name of a city")
+    if len(sys.argv) == 1:
+        parser.print_help(sys.stderr)
+        sys.exit(1)
+    return vars(parser.parse_args())
 
-# max_dist = 30 # moscow
-#max_dist = 20 # spb
-#max_dist = 20 # berlin
-#max_dist = 7 # barcelona
-#max_dist = 9 # hong kong
-max_dist = 15
 
 def haversine(lon1, lat1, lon2, lat2):
-    R = 6373
+    EARTH_RADIUS = 6373
     dlon = radians(lon2 - lon1)
     dlat = radians(lat2 - lat1)
 
     try:
         a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
         c = 2 * asin(sqrt(a)) 
-        return R * c
+        return EARTH_RADIUS * c
     except:
         return np.inf
 
@@ -47,33 +48,52 @@ def alphanum(str):
     return pass2
 
 
-insta_loc = "https://www.instagram.com/explore/locations/" #
-site = "https://www.instagram.com"
+SITE = "https://www.instagram.com"
 
-unrelevant_fn = "locations/unrelevant.txt"
-loc_fn = "locations/{}.txt"
+args = init_arguments()
+CITY = args['city']
 
-float_pattern = "(\d+\.\d+)"
 
-n_probe = 10
+JSON_PATH = 'locations_scraper.json'
+with open(JSON_PATH, "r") as f:
+    city_attributes = json.load(f)
+
+COUNTRY_EXPLORE_LINK = city_attributes[CITY]['link']
+COUNTRY_EXPLORE_PATH = join(SITE, COUNTRY_EXPLORE_LINK)
+CITY_CENTER = city_attributes[CITY]['center']
+MAX_DIST = city_attributes[CITY]['max_dist']
+
+EXPLORE_LINK = "https://www.instagram.com/explore/locations/"
+
+PROJECT_DIR = "../.."
+LOCATION_DIR = join(PROJECT_DIR, "data/places_longlist/{}/".format(CITY))
+# FIXME
+UNRELEVANT_FILENAME = join(LOCATION_DIR, "unrelevant.txt".format(CITY))
+# FIXME
+
+LOCATIONS_PATH = join(LOCATION_DIR, "{}.txt")
+
+N_PROBE = 10
+TIMEOUT = 30
+
+FLOAT_RE = "(\d+\.\d+)"
+
+if not os.path.exists(LOCATION_DIR):
+    os.makedirs(LOCATION_DIR)
 
 options = ChromeOptions()
 options.add_argument("headless")
 driver = Chrome(chrome_options=options)
-driver.set_page_load_timeout(30)
-driver.implicitly_wait(30)
+driver.set_page_load_timeout(TIMEOUT)
+driver.implicitly_wait(TIMEOUT)
 
-#driver.get("https://www.instagram.com/explore/locations/RU/russia/") #
-#driver.get("https://www.instagram.com/explore/locations/DE/germany/")
-#driver.get("https://www.instagram.com/explore/locations/ES/spain/")
-#driver.get("https://www.instagram.com/explore/locations/HK/hong-kong/")
-driver.get("https://www.instagram.com/explore/locations/IT/italy/")
+driver.get(COUNTRY_EXPLORE_PATH)
 
 print("Expanding areas list...")
 while True:
     try:
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);") #
-        driver.find_element_by_css_selector("a[href*='explore/locations/RU/russia/?page=']").click() #
+        driver.find_element_by_css_selector("a[href*='{}?page=']".format(COUNTRY_EXPLORE_LINK)).click() #
         time.sleep(1)
     except:
         break
@@ -83,20 +103,20 @@ areas = [x['href'] for x in soup.find_all("a", href=re.compile("/explore/locatio
 print("NUMBER OF AREAS:", len(areas))
 
 unrelevant_areas = ""
-if os.path.isfile(unrelevant_fn):
-    unrelevant_areas = "\n".join(open(unrelevant_fn, "r").readlines())
+if os.path.isfile(UNRELEVANT_FILENAME):
+    unrelevant_areas = "\n".join(open(UNRELEVANT_FILENAME, "r").readlines())
 
-crawled_locations = list(map(lambda x: x.split(".")[0], [f for f in listdir("locations") if isfile(join("locations", f))]))
+crawled_locations = list(map(lambda x: x.split(".")[0],
+                             [f for f in listdir(LOCATION_DIR) if isfile(join("locations", f))]))
 
 for area in areas:
-    area_name = area.split("/")[-2]  #
+    # FIXME
+    area_name = area.split("/")[-2]
 
-    #if area_name in crawled_locations:
-    #    continue
     if area_name in unrelevant_areas:
         continue
 
-    driver.get(site + area)
+    driver.get(SITE + area)
 
     print("AREA: {}".format(area_name))
     probe_locations = re.findall('"id":"(\d+)"', driver.page_source)
@@ -104,30 +124,30 @@ for area in areas:
     shuffle(probe_locations)
 
     dists = []
-    for probe in probe_locations[:n_probe]:
+    for probe in probe_locations[:N_PROBE]:
         try:
-            driver.get(insta_loc + probe)
+            driver.get(EXPLORE_LINK + probe)
         except:
             continue
 
-        re_lat = re.findall('"lat":' + float_pattern, driver.page_source)  #
-        re_lng = re.findall('"lng":' + float_pattern, driver.page_source)  #
+        re_lat = re.findall('"lat":' + FLOAT_RE, driver.page_source)  #
+        re_lng = re.findall('"lng":' + FLOAT_RE, driver.page_source)  #
         if re_lat and re_lng:
             lat = float(re_lat[0]) 
             lng = float(re_lng[0])
         else:
             continue
 
-        dists.append(round(haversine(center[0], center[1], lat, lng), 1))
+        dists.append(round(haversine(CITY_CENTER[0], CITY_CENTER[1], lat, lng), 1))
         time.sleep(randint(1, 5))
 
-    if (not dists) or np.nanmedian(dists) > max_dist:
+    if (not dists) or np.nanmedian(dists) > MAX_DIST:
         print("NOT RELEVANT: {} km".format(round(np.median(dists), 1)))
-        with open(unrelevant_fn, "a+") as f:
+        with open(UNRELEVANT_FILENAME, "a+") as f:
             f.write("{},{}\n".format(area_name, round(np.median(dists), 1)))
         continue
 
-    driver.get(site + area)
+    driver.get(SITE + area)
     
     print("Expanding locations list...")
     while True:
@@ -144,7 +164,7 @@ for area in areas:
 
     if locations_links:
         cache = []
-        fn = loc_fn.format(area_name)
+        fn = LOCATIONS_PATH.format(area_name)
         if os.path.isfile(fn):
             cache = "\n".join(open(fn, "r").readlines())
 
@@ -155,7 +175,7 @@ for area in areas:
                     continue
                     
                 try:
-                    driver.get(site + link['href'])
+                    driver.get(SITE + link['href'])
                 except:
                     print("GET error:", link)
                     continue
@@ -165,6 +185,7 @@ for area in areas:
                     cn = int(re_cn[0])
                 else:
                     warnings.warn('Regexp error: {}'.format(link['href']), RuntimeWarning)
+                    time.sleep(5)
                     continue
 
                 label = alphanum(link.string)

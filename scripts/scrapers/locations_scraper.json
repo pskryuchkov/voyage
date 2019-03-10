@@ -1,0 +1,50 @@
+{
+    "moscow": {
+        "center": [
+            55.7535, 
+            37.62
+        ],
+        "max_dist": 30,
+        "link": "explore/locations/RU/russia/"
+    },
+    "spb": {
+        "center": [
+            59.9384, 
+            30.3158
+        ],
+        "max_dist": 20,
+        "link": "explore/locations/RU/russia/"
+    },
+    "tula": {
+        "center": [
+            54.193122,
+            37.617348
+        ],
+        "max_dist": 5,
+        "link": "explore/locations/RU/russia/"
+    },
+    "berlin": {
+        "center": [
+            52.523695, 
+            13.417237
+        ],
+        "max_dist": 20,
+        "link": "explore/locations/DE/germany/"
+    },
+    "rome": {
+        "center": [
+            41.902689, 
+            12.496176
+        ],
+        "max_dist": 15,
+        "link": "explore/locations/IT/italy/"
+    },
+    "hong_kong": {
+        "center": [
+            22.257328, 
+            114.198523
+        ],
+        "max_dist": 9,
+        "link": "explore/locations/HK/hong-kong/"
+    }
+}

@@ -1,11 +1,24 @@
-# v0.2
+# Wiki data scraper
+# Run after 'reverse_geocoding.py'
+# Status: WIP
 
 import requests
-from pprint import pprint
+from os.path import join
 import json
 import pandas as pd
 import re
 from bs4 import BeautifulSoup
+import argparse
+import sys
+
+
+def init_arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-c", "--city", required=True, help="name of the city")
+    if len(sys.argv) == 1:
+        parser.print_help(sys.stderr)
+        sys.exit(1)
+    return vars(parser.parse_args())
 
 
 def wiki_search(q, lang="ru"):
@@ -50,18 +63,18 @@ def article_coords(article_title, lang="en"):
 
 
 def collect_articles(city, saving_interval=50):
-    df = pd.read_csv("/Users/pavel/Sources/python/concepts/insta/scripts/top_places/top_places_{}.txt".format(city))
+    df = pd.read_csv("../../data/top_places/top_places_{}.txt".format(city))
     locations = df.iloc[:, 0].tolist()
 
     data = []
     for j, x in enumerate(locations):
-        #ru_str = re.sub("[a-zA-Z_]", " ", x).strip()
+        # ru_str = re.sub("[a-zA-Z_]", " ", x).strip()
         en_str = re.sub("[а-яА-Я_]", " ", x).strip()
 
         ru_title, en_title = None, None
 
-        #if ru_str:
-        #    ru_title = wiki_title(wiki_search(ru_str, 'ru'))
+        # if ru_str:
+        #     ru_title = wiki_title(wiki_search(ru_str, 'ru'))
         if en_str:
             en_title = wiki_title(wiki_search(en_str, 'en'))
         
@@ -69,18 +82,18 @@ def collect_articles(city, saving_interval=50):
         data.append([x, ru_title, en_title])
 
         if j % saving_interval == 0 and j > 0:
-            with open("wiki_{}.csv".format(city), "w") as file:
+            with open(join(WIKI_DIR, "wiki_{}.csv".format(city)), "w") as file:
                 for line in data:
                     loc, ru_title, en_title = line
                     file.write("{};{};{}\n".format(loc, ru_title, en_title))
 
 
 def collect_views(city, keyword):
-    df = pd.read_csv("/Users/pavel/Sources/python/concepts/insta/scripts/wiki/wiki_{}.csv".format(city), sep=";", header=None)
+    df = pd.read_csv(join(WIKI_DIR, "wiki_{}.csv".format(city)), sep=";", header=None)
     df = df.drop_duplicates()
 
     name = df.iloc[:, 0].tolist()
-    ru_locs = df.iloc[:, 1].tolist()
+    # ru_locs = df.iloc[:, 1].tolist()
     en_locs = df.iloc[:, 2].tolist()
 
     data = []
@@ -97,22 +110,28 @@ def collect_views(city, keyword):
             err_cn += 1
 
         if j % 50 == 0 and j > 0:
-            with open("wiki_views_{}.csv".format(city), "w") as file:
+            with open(join(WIKI_DIR, "wiki_views_{}.csv".format(city)), "w") as file:
                 for line in data:
                     file.write("{};{};{};{};{}\n".format(*line))
     print(len(name), err_cn)
 
 
 def polish(city):
-    wiki_table = pd.read_csv("wiki_views_{}.csv".format(city), sep=";", header=None)
+    wiki_table = pd.read_csv(join(WIKI_DIR, "wiki_views_{}.csv".format(city)),
+                             sep=";", header=None)
+
     wiki_table.columns = ["name", "wiki_name", "lon", "lat", "views"]
 
-    wiki_table = wiki_table[wiki_table['views'] != 'None']
-    wiki_table = wiki_table[wiki_table['lon'] != 'None']
+    print(wiki_table.head())
+
+    wiki_table = wiki_table.dropna(subset=['views', 'lon'])
+
+    #wiki_table = wiki_table[wiki_table['views'] != 'None']
+    #wiki_table = wiki_table[wiki_table['lon'] != 'None']
 
     wiki_table = wiki_table[['wiki_name', 'lon', 'lat', 'views']].drop_duplicates()
 
-    wiki_table.to_csv("wiki_items_{}.csv".format(city), index=False)
+    wiki_table.to_csv(join(WIKI_DIR, "wiki_items_{}.csv".format(city)), index=False)
 
 
 def try_parse(xml, tag):
@@ -123,30 +142,6 @@ def try_parse(xml, tag):
         value = None
     return value
 
-"""
-def wiki_geocoding(city):
-    GEO_REQUEST = 'https://nominatim.openstreetmap.org/reverse?format=xml&lat={0}&lon={1}'
-    wiki_table = pd.read_csv("wiki_items_{}.csv".format(city))
-
-    wiki_suburbs, wiki_roads = [], []
-    cn = 0
-    for lat, lon in zip(wiki_table.lat, wiki_table.lon):
-        response = requests.get(GEO_REQUEST.format(lon, lat))   
-
-        suburb = try_parse(response.text, 'suburb')
-        road = try_parse(response.text, 'road')       
-
-        wiki_suburbs.append(suburb)
-        wiki_roads.append(road)
-
-        cn += 1
-        print(cn, wiki_table.shape[0], suburb, road)
-
-    wiki_table['suburb'] = wiki_suburbs
-    wiki_table['roads'] = wiki_roads
-
-    wiki_table.to_csv("wiki_located_items_{}.csv".format(city), index=False)
-"""
 
 def get_address(google_api_response, street_key, area_key):
     street, area = None, None
@@ -160,11 +155,17 @@ def get_address(google_api_response, street_key, area_key):
     return street, area
 
 
-def wiki_geocoding(city, language = 'en'):
-    api_key = "AIzaSyCMoT57rB8xLg5Kba9NJ5BfPqH2GFWh_n0"
+def load_api_key():
+    with open("google.token", "r") as f:
+        data = f.readline()
+    return data.strip()
+
+
+def wiki_geocoding(city, language='en'):
+    api_key = load_api_key()
     GEO_REQUEST = 'https://maps.googleapis.com/maps/api/geocode/json?latlng={0},{1}&key={2}&language={3}'
     
-    wiki_table = pd.read_csv("wiki_items_{}.csv".format(city))
+    wiki_table = pd.read_csv(join(WIKI_DIR, "wiki_items_{}.csv".format(city)))
 
     wiki_roads = []
     cn = 0
@@ -173,12 +174,9 @@ def wiki_geocoding(city, language = 'en'):
         response = requests.get(GEO_REQUEST.format(lon, lat, api_key, language))   
 
         geo_json = json.loads(response.text)
-        # moscow sublocality_level_1
-        # spb administrative_area_level_3
-        # berlin sublocality_level_2
-        # hong kong neighborhood
-        # rome sublocality_level_1
-        road, _ = get_address(geo_json, 'route', 'administrative_area_level_3')  
+
+        # FIXME: sublocality doesn't matter?
+        road, _ = get_address(geo_json, 'route', 'sublocality_level_2')  
 
         wiki_roads.append(road)
 
@@ -187,13 +185,18 @@ def wiki_geocoding(city, language = 'en'):
 
     wiki_table['roads'] = wiki_roads
 
-    wiki_table.to_csv("wiki_located_items_{}.csv".format(city), index=False)
+    wiki_table.to_csv(join(WIKI_DIR, "wiki_located_items_{}.csv".format(city)), index=False)
 
 
-CITY = "hong_kong" # "moscow"
-CHECK_WORD = "hong kong" # "saint petersburg"
+args = init_arguments()
+CITY = args['city']
 
-#collect_articles(CITY)
-#collect_views(CITY, CHECK_WORD)
-#polish(CITY)
+WIKI_DIR = "../../data/wiki/"
+
+# not always
+CHECK_WORD = CITY
+
+collect_articles(CITY)
+collect_views(CITY, CHECK_WORD)
+polish(CITY)
 wiki_geocoding(CITY)

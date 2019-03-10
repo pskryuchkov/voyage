@@ -1,0 +1,8 @@
+{
+    "tula": "sublocality_level_2", 
+    "hong_kong": "neighborhood", 
+    "moscow": "sublocality_level_1", 
+    "berlin": "sublocality_level_2", 
+    "rome": "sublocality_level_1", 
+    "spb": "administrative_area_level_3"
+}

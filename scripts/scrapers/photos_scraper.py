@@ -1,4 +1,7 @@
-# v0.4
+# Scrape instagram locations photos
+# Run after 'locations_rank.py'
+
+# Depencies: Chrome driver
 
 import os
 from os.path import join, isfile, exists
@@ -20,7 +23,7 @@ from bs4 import BeautifulSoup
 
 def init_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--city", required=True, help="name of the city")
+    parser.add_argument("-c", "--city", required=True, help="name of a city")
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
         sys.exit(1)
@@ -63,11 +66,12 @@ site = "https://www.instagram.com"
 float_pattern = "(\d+\.\d+)"
 name_filtering_pattern = '[^0-9a-zA-Zа-яёА-ЯЁ]+'
 
-photo_dir = "photos_{}".format(city)
-top_locations_fn = "top_places_{}.txt".format(city)
-top_locations_path = join("top_places", top_locations_fn)
+project_dir = "../.."
+photo_dir = join(project_dir, "photos/{}".format(city))
+top_locations_dir = join(project_dir, 'data/top_places')
+top_locations_path = join(top_locations_dir, 'top_places_{}.txt'.format(city))
 saved_locations_fn = "loc_info.csv"
-saved_locations_path = join("..", photo_dir, saved_locations_fn) 
+saved_locations_path = join(photo_dir, saved_locations_fn) 
 
 hush_interval = 10
 n_down_scrolls = 10
@@ -84,8 +88,11 @@ locations_names = [x.split(",")[0] for x in data]
 areas = [x.split(",")[1] for x in data]
 locations_ids = [x.split(',')[2].strip() for x in data]
 
+if not os.path.exists(photo_dir):
+    os.makedirs(photo_dir)
+
 if not isfile(saved_locations_path):
-    with open(saved_locations_path, "w") as loc_info:
+    with open(saved_locations_path, "w+") as loc_info:
         loc_info.write(saved_locations_table_header)
 
 with init_driver() as driver:
@@ -100,7 +107,8 @@ with init_driver() as driver:
             print("Invalid string: {}".format(data[j]))
             continue
 
-        location_photos_dir = join("..", photo_dir, area_name, location_id)
+        # FIXME
+        location_photos_dir = join(photo_dir, area_name, location_id)
 
         if not exists(location_photos_dir):
             os.makedirs(location_photos_dir)

@@ -1,21 +1,35 @@
 # This code is rework of places365: https://github.com/CSAILVision/places365
 # Depency: http://places2.csail.mit.edu/models_places365/W_sceneattribute_wideresnet18.npy
-# Version: 0.3
+# Version: 0.4
+
+
+from os.path import isdir, isfile, join
+from os import listdir
+import argparse
+import json
+import sys
+
+import numpy as np
+from scipy.misc import imresize as imresize
+from PIL import Image
+import cv2
 
 import torch
 from torch.autograd import Variable as V
 import torchvision.models as models
 from torchvision import transforms as trn
 from torch.nn import functional as F
-import os
-import numpy as np
-from scipy.misc import imresize as imresize
-import cv2
-from PIL import Image
-from os import listdir
-from os.path import isdir, join
-import json
+
 import wideresnet
+
+
+def init_arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-c", "--city", required=True, help="name of the city")
+    if len(sys.argv) == 1:
+        parser.print_help(sys.stderr)
+        sys.exit(1)
+    return vars(parser.parse_args())
 
 
 def load_labels():
@@ -53,18 +67,6 @@ def load_labels():
 def hook_feature(module, input, output):
     features_blobs.append(np.squeeze(output.data.cpu().numpy()))
 
-def returnCAM(feature_conv, weight_softmax, class_idx):
-    size_upsample = (256, 256)
-    nc, h, w = feature_conv.shape
-    output_cam = []
-    for idx in class_idx:
-        cam = weight_softmax[class_idx].dot(feature_conv.reshape((nc, h*w)))
-        cam = cam.reshape(h, w)
-        cam = cam - np.min(cam)
-        cam_img = cam / np.max(cam)
-        cam_img = np.uint8(255 * cam_img)
-        output_cam.append(imresize(cam_img, size_upsample))
-    return output_cam
 
 def returnTF():
     tf = trn.Compose([
@@ -91,15 +93,17 @@ def load_model():
     return model
 
 
-suffix = "hong_kong"
-path = "/Users/pavel/Sources/python/concepts/insta/photos_{}".format(suffix)
+args = init_arguments()
+city = args['city']
+
+path = "../../photos/{}".format(city)
+scenes_dir = "../../data/scenes"
+scenes_path = join(scenes_dir, 'scenes_{}.json'.format(city))
 
 scene_base = {}
-try:
-    with open('scenes_{}.json'.format(suffix), 'r') as f:
+if isfile(scenes_path):
+    with open(scenes_path, 'r') as f:
         scene_base = json.load(f)
-except:
-    pass
 
 classes, labels_IO, labels_attribute, W_attribute = load_labels()
 
@@ -110,31 +114,34 @@ tf = returnTF()
 
 params = list(model.parameters())
 weight_softmax = params[-2].data.numpy()
-weight_softmax[weight_softmax<0] = 0
+weight_softmax[weight_softmax < 0] = 0
 
-cn = 0
 areas = [f for f in listdir(path) if isdir(join(path, f))]
+
+saving_interval = 10
+json_indent = 4
+
+global_locations_cn = 0
 for area in areas:
-    locations = os.listdir(os.path.join(path, area))
+    locations = listdir(join(path, area))
     for k, loc in enumerate(locations):
-        cn += 1
+        global_locations_cn += 1
 
         if loc in scene_base:
-            print("already processed", loc)
+            print("Processed:", loc)
             continue
 
-        print(cn+1, loc)
+        print(global_locations_cn, loc)
         
-        try:
-            pictures = os.listdir(os.path.join(path, area, loc))
-        except:
-            pass
+        pictures = []
+        if isdir(join(path, area, loc)):
+            pictures = listdir(join(path, area, loc))
 
         scene_base[loc] = {}
 
         for pic in pictures:
             try:
-                img = Image.open(os.path.join(path, area, loc, pic))
+                img = Image.open(join(path, area, loc, pic))
             except:
                 continue
 
@@ -142,8 +149,8 @@ for area in areas:
 
             try:
                 logit = model.forward(input_img)
-            except:
-                print("NN error")
+            except Exception as e:
+                print(e)
 
             h_x = F.softmax(logit, 1).data.squeeze()
             probs, idx = h_x.sort(0, True)
@@ -167,6 +174,6 @@ for area in areas:
 
             scene_base[loc][pic] = scene_proporties
         
-        if k % 10 == 0:
-            with open('scenes_{}.json'.format(suffix), 'w') as fp:
-                json.dump(scene_base, fp, indent=4)
+        if k % saving_interval == 0:
+            with open(scenes_path, 'w') as fp:
+                json.dump(scene_base, fp, indent=json_indent)
