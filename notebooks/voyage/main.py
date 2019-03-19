@@ -11,13 +11,14 @@ pd.options.display.float_format = '{:.4g}'.format
 py.init_notebook_mode(connected=True)
 
 
-def get_settings(city):
+def get_settings(city, use_cache=False):
     def load_settings(city):
         nb_settings = data.load_json(consts.SETTINGS_FILE)
 
         class Settings:
             city_name = city
             city_center = nb_settings[city]['city_center']
+            zoom = nb_settings[city]['zoom']
             language = nb_settings[city]['language']
 
             def __init__(self):
@@ -27,7 +28,8 @@ def get_settings(city):
 
     if not hasattr(get_settings, '_settings'):
         get_settings._settings = load_settings(city)
-    elif city != get_settings._settings.city_name:
+    elif city != get_settings._settings.city_name or \
+            not use_cache:
         get_settings._settings = load_settings(city)
 
     return get_settings._settings
@@ -41,7 +43,9 @@ def city_map(dataset):
     streets.draw_city_map(streets_table['longtitude'].tolist(),
                           streets_table['latitude'].tolist(),
                           streets_table[consts.STREET_KEY],
-                          streets_table['counter'], settings.city_center)
+                          streets_table['counter'],
+                          settings.city_center,
+                          zoom=settings.zoom)
 
 
 def street_area_combine(dataset):
@@ -172,10 +176,11 @@ def tagged_city_map(dataset):
                                 streets_table['longtitude'],
                                 streets_table['latitude'],
                                 streets_table['counter'],
-                                tags_labels)
+                                tags_labels, settings.zoom)
 
 
-def locations_scatter(dataset, opposite_dataset, use_cache=False):
+def locations_scatter(dataset, opposite_dataset,
+                      bro_threshold=0.68, use_cache=False):
     # TSNE
     ids, locations_features = scenes.get_locations_features(dataset.photos_scenes)
     opposite_ids, opposite_locations_features = scenes.get_locations_features(opposite_dataset.photos_scenes)
@@ -185,6 +190,7 @@ def locations_scatter(dataset, opposite_dataset, use_cache=False):
     joint_ids = ids + opposite_ids
 
     if use_cache:
+        print("Load t-SNE model from cache")
         with open('tsne.pickle', 'rb') as handle:
             planar_features = pickle.load(handle)
     else:
@@ -199,7 +205,8 @@ def locations_scatter(dataset, opposite_dataset, use_cache=False):
 
     indexes, opposite_indexes, other_indexes = \
             clouds.separate_indexes(dataset.city, opposite_dataset.city,
-                                    planar_features, joint_ids, id2city)
+                                    planar_features, joint_ids, id2city,
+                                    bro_threshold=bro_threshold)
 
     joint_indexes = indexes + opposite_indexes
 
@@ -207,17 +214,18 @@ def locations_scatter(dataset, opposite_dataset, use_cache=False):
     locations_scenes = scenes.get_locations_scenes(dataset.photos_scenes)
     opposite_locations_scenes = scenes.get_locations_scenes(opposite_dataset.photos_scenes)
 
-    hovers = clouds.get_cloud_hovers(dataset.loc_info,
+    hovers = clouds.get_cloud_hovers(ids, dataset.loc_info,
                                      locations_scenes)
-    opposite_hovers = clouds.get_cloud_hovers(opposite_dataset.loc_info,
+
+    opposite_hovers = clouds.get_cloud_hovers(opposite_ids, opposite_dataset.loc_info,
                                               opposite_locations_scenes)
 
     joint_hovers = np.array(hovers + opposite_hovers)
 
-    labels, labels_coordinates = clouds.calc_tags_positions(locations_scenes,
-                                                            opposite_locations_scenes,
-                                                            joint_indexes,
-                                                            planar_features)
+    labels, labels_coordinates = clouds.calc_labels_positions(locations_scenes,
+                                                              opposite_locations_scenes,
+                                                              joint_indexes,
+                                                              planar_features)
     labels = np.array(labels)
     labels_coordinates = np.array(labels_coordinates)
 

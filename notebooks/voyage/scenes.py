@@ -18,13 +18,6 @@ import voyage.shared as shared
 import voyage.styles as styles
 
 
-def get_tags(mode, top_scenes=None):
-    if mode == "top":
-        return [x[0] for x in top_scenes]
-    elif mode == "selected":
-        return consts.SELECTED_TAGS
-
-
 def tag_relevant_places(scene_data, tag, n_top=100):
     tag_values = {}
     for location in list(scene_data.keys()):
@@ -180,8 +173,9 @@ def get_locations_scenes(photos_scenes):
     raw_scenes_table = []
     for location_id in locations_scenes:
         selected_scenes = [locations_scenes[location_id][tag] for tag in consts.SELECTED_TAGS]
-        table_line = [location_id] + selected_scenes
-        raw_scenes_table.append(table_line)
+        if np.any(selected_scenes):
+            table_line = [location_id] + selected_scenes
+            raw_scenes_table.append(table_line)
 
     columns = ["id"] + consts.SELECTED_TAGS
     return pd.DataFrame(raw_scenes_table, columns=columns)
@@ -280,7 +274,9 @@ def get_locations_features(photos_scenes):
            locations_scenes[consts.SELECTED_TAGS].values.tolist()
 
 
-def draw_tagged_city_map(city_center, lat, lon, streets_locations_number, tags_labels):
+def draw_tagged_city_map(city_center, lat, lon,
+                         streets_locations_number,
+                         tags_labels, zoom):
     style = styles.TaggedCityMapStyle
 
     tags_labels = [x if streets_locations_number.iloc[j] > style.MIN_LOCATIONS
@@ -314,7 +310,7 @@ def draw_tagged_city_map(city_center, lat, lon, streets_locations_number, tags_l
             center=dict(
                 lat=city_center[0],
                 lon=city_center[1]),
-            zoom=style.ZOOM,
+            zoom=zoom,
             style='light'
         ))
 

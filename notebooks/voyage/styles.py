@@ -16,7 +16,8 @@ class CityMapStyle:
 
 class StreetAreaCombine:
     HOLE = 0.5
-    PULL = 0.05
+    LINE_WIDHT = 5
+    LINE_COLOR = 'white'
     PIE_AREA_X = [0.1, 1.0]
     PIE_AREA_Y = [0.2, 0.8]
     BAR_CHART_OPACITY = 0.8
@@ -77,11 +78,11 @@ class TagsRateStyle:
     FONT_SIZE = 11.5
     PLOT_WIDTH = 550
     PLOT_HEIGHT = 330
-    OPACITY = 0.9
+    OPACITY = 0.8
     VERTICAL_SPACING = 0.15
     RATE_BAR_COLOR = 'red'
     TICKFONT_COLOR = 'lightgrey'
-    MARGIN = go.layout.Margin(t=30, b=120, l=30, r=25)
+    MARGIN = go.layout.Margin(t=30, b=120, l=40, r=25)
 
 
 class TagsDeltaStyle:
@@ -92,7 +93,7 @@ class TagsDeltaStyle:
     DELTA_BAR_COLOR = 'dodgerblue'
     TICKFONT_COLOR = 'lightgrey'
     OPACITY = 0.9
-    MARGIN = go.layout.Margin(t=30, b=120, l=30, r=25)
+    MARGIN = go.layout.Margin(t=30, b=120, l=40, r=25)
 
 
 class StreetsFeaturesPlotStyle:
@@ -115,7 +116,7 @@ class TaggedCityMapStyle:
     MARKER_SIZE = 17
     MARKER_OPACITY = 0.3
     MARKER_COLOR = 'dodgerblue'
-    ZOOM = 12
+    #ZOOM = 12
     MARGIN = dict(l=0, r=30, b=0, t=20)
     MAP_WIDTH = 800
     MAP_HEIGHT = 470
@@ -134,8 +135,8 @@ class LocationsScatterStyle:
     TARGET_COLOR = 'orangered'
     OPPOSITE_COLOR = 'gold'
     ANNOTATION_BACKGROUND = 'orangered'
-    ANNOTATION_FONT_SIZE = 14
-    ANNOTATION_OPACITY = 0.95
+    ANNOTATION_FONT_SIZE = 12.5
+    ANNOTATION_OPACITY = 1.0
     ANNOTATION_FONT_COLOR = 'white'
     ANNOTATION_FONT_NAME = 'arial'
     MARGIN = dict(l=0, r=30, b=0, t=20)

@@ -1,3 +1,5 @@
+import sys
+
 import numpy as np
 
 from sklearn.manifold import TSNE
@@ -7,9 +9,12 @@ import plotly.offline as py
 
 from . import consts, scenes, shared, styles
 
+MAX_INT = sys.maxsize
+
 
 def to_planar(features_table):
     planar_features = TSNE().fit_transform(features_table).T
+
     return planar_features
 
 
@@ -23,7 +28,7 @@ def location_tags(features, n_top=3):
     return top_tags
 
 
-def get_cloud_hovers(locations_data, photos_scenes):
+def get_cloud_hovers(ids, locations_data, photos_scenes):
     id2loc_target = scenes.get_id2loc(locations_data)
 
     id2tags = {}
@@ -31,9 +36,10 @@ def get_cloud_hovers(locations_data, photos_scenes):
         id2tags[row['id']] = location_tags(row)
 
     hovers = ["{}<br>{}".format(shared.trim(id2loc_target[x].replace("_", " ")),
-                                       ", ".join(id2tags[x]))
-                     if x in id2loc_target else "_"
-                     for x in photos_scenes['id'].tolist()]
+                                ", ".join(id2tags[x]))
+              if x in id2loc_target else "_"
+              for x in ids]
+
     return hovers
 
 
@@ -47,7 +53,7 @@ def separate_indexes(city, opposite_city,
 
     visual_data_list = list(points.T)
 
-    n_points = len(points[0])
+    n_points = len(ordered_ids)
     indexes, opposite_indexes, other_indexes = [], [], []
     for j in range(n_points):
         point = points[0, j], points[1, j]
@@ -70,16 +76,19 @@ def separate_indexes(city, opposite_city,
     return indexes, opposite_indexes, other_indexes
 
 
-def calc_tags_positions(target_tags_table, opposite_tags_table,
-                        indexes, visual_data,
-                        min_hor_diff=8.0,
-                        min_ver_diff=8.0):
+def calc_labels_positions(target_tags_table, opposite_tags_table,
+                          indexes, visual_data,
+                          min_dx=20.0, min_dy=10.0):
 
-    def min_diff(z, zarr):
-        if len(zarr) > 1:
-            return np.sort(np.abs(z - zarr))[1]
+    def calc_dist(point, other_points):
+        if other_points:
+            x, y = point[0], point[1]
+            return ((x - other_points[0]) ** 2 + (y - other_points[1]) ** 2) ** 0.5
         else:
-            return 10 ** 6
+            return np.array()
+
+    tags = consts.SELECTED_TAGS
+    np.random.shuffle(tags)
 
     idx2tag = {}
     for index, row in target_tags_table.iterrows():
@@ -89,7 +98,7 @@ def calc_tags_positions(target_tags_table, opposite_tags_table,
         idx2tag[index + target_tags_table.shape[0]] = location_tags(row)[0]
 
     tags_positions = {}
-    for tag in consts.SELECTED_TAGS:
+    for tag in tags:
         xm, ym = [], []
         for j in indexes:
             if j in idx2tag.keys() and idx2tag[j] == tag:
@@ -98,30 +107,37 @@ def calc_tags_positions(target_tags_table, opposite_tags_table,
                 ym.append(yc)
 
         if xm and ym:
-            tags_positions[tag] = [np.mean(xm), np.mean(ym)]
+            tags_positions[tag] = [np.median(xm), np.median(ym)]
 
-    tag_labels, tag_labels_coordinates = [], []
+    scenes_labels, labels_coordinates = [], []
     for k in tags_positions:
         if not np.isnan(tags_positions[k][0]):
-            tag_labels.append(k)
-            tag_labels_coordinates.append(tags_positions[k])
+            scenes_labels.append(k)
+            labels_coordinates.append(tags_positions[k])
 
-    showing_indexes = []
-    xarr, yarr = [], []
-    for j, (x, y) in enumerate(tag_labels_coordinates):
-        dx, dy = min_diff(x, xarr), min_diff(y, yarr)
-        if (dx > min_hor_diff and dy > min_ver_diff):
-            showing_indexes.append(j)
-            xarr.append(x)
-            yarr.append(y)
+    idx_show = []
+    x_show, y_show = [], []
+    for j, (x, y) in enumerate(labels_coordinates):
+        dists = calc_dist([x, y], [x_show, y_show])
+        if j:
+            closest_point_idx = np.argmin(dists)
+            dx = np.abs(x - x_show[closest_point_idx])
+            dy = np.abs(y - y_show[closest_point_idx])
+        else:
+            dx, dy = MAX_INT, MAX_INT
 
-    tag_labels = [x for j, x in enumerate(tag_labels)
-                  if j in showing_indexes]
+        if dx > min_dx or dy > min_dy:
+            idx_show.append(j)
+            x_show.append(x)
+            y_show.append(y)
 
-    tag_labels_coordinates = [x for j, x in enumerate(tag_labels_coordinates)
-                              if j in showing_indexes]
+    scenes_labels = [x for j, x in enumerate(scenes_labels)
+                     if j in idx_show]
 
-    return tag_labels, tag_labels_coordinates
+    labels_coordinates = [x for j, x in enumerate(labels_coordinates)
+                          if j in idx_show]
+
+    return scenes_labels, labels_coordinates
 
 
 def draw_locations_scatter(locs_x, locs_y,
@@ -133,7 +149,7 @@ def draw_locations_scatter(locs_x, locs_y,
     def create_scatter(x, y, colors, labels, name, size, opacity):
         return go.Scatter(x=x, y=y,
                           mode='markers',
-                          hoverinfo='text',
+                          hoverinfo='text+x+y',
                           text=labels, name=name,
                           marker=dict(size=size,
                                       color=colors,
@@ -146,16 +162,15 @@ def draw_locations_scatter(locs_x, locs_y,
     for l, x, y in zip(tag_labels,
                        [x[0] for x in tag_labels_coordinates],
                        [x[1] for x in tag_labels_coordinates]):
-        annotations.append(
-            go.layout.Annotation(x=x, y=y,
-                          xanchor="center",
-                          showarrow=False,
-                          text="<i><b>{}".format(l),
-                          opacity=style.ANNOTATION_OPACITY,
-                          bgcolor=style.ANNOTATION_BACKGROUND,
-                          font=dict(size=style.ANNOTATION_FONT_SIZE,
-                                    color=style.ANNOTATION_FONT_COLOR,
-                                    family=style.ANNOTATION_FONT_NAME)))
+        annotations.append(go.layout.Annotation(x=x, y=y,
+                                                xanchor="center",
+                                                showarrow=False,
+                                                text="<i><b>{}".format(l),
+                                                opacity=style.ANNOTATION_OPACITY,
+                                                bgcolor=style.ANNOTATION_BACKGROUND,
+                                                font=dict(size=style.ANNOTATION_FONT_SIZE,
+                                                          color=style.ANNOTATION_FONT_COLOR,
+                                                          family=style.ANNOTATION_FONT_NAME)))
 
     data = [create_scatter(locs_x, locs_y,
                            style.TARGET_COLOR,

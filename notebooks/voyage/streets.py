@@ -72,7 +72,8 @@ def count_streets_location(geo_table):
     return streets_table
 
 
-def draw_city_map(lat, lon, streets, streets_locations_number, city_center):
+def draw_city_map(lat, lon, streets, streets_locations_number,
+                  city_center, zoom):
     style = styles.CityMapStyle
 
     marker_sizes = [x if x < style.MAX_MARKER_SIZE else style.MAX_MARKER_SIZE 
@@ -122,7 +123,7 @@ def draw_city_map(lat, lon, streets, streets_locations_number, city_center):
                     center=dict(
                         lat=city_center[0],
                         lon=city_center[1]),
-                    zoom=style.ZOOM,
+                    zoom=zoom,
                     style='light'))
 
     fig = dict(data=data, layout=layout)
@@ -174,8 +175,9 @@ def draw_street_area_combine(streets_barchart_y,
                    sort=False,
                    textfont=dict(size=style.PIE_CHART_FONT_SIZE,
                                  color=style.PIE_CHART_FONT_COLOR),
-                   marker=dict(colors=pieces_colors),
-                   pull=style.PULL)]
+                   marker=dict(colors=pieces_colors,
+                               line=dict(color=style.LINE_COLOR,
+                                         width=style.LINE_WIDHT)))]
 
     layout = go.Layout(height=style.PLOT_HEIGHT,
                        width=style.PLOT_WIDTH,

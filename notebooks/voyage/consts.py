@@ -38,13 +38,15 @@ OTHER_LABEL = "Other"
 TOP_AREAS_N = 10
 TOP_STREETS_N = 100
 
-N_SCENES = 25
 SELECTED_TAGS = ['library/indoor', 'restaurant', 'street', 'bar',
                  'discotheque', 'promenade', 'museum/indoor', 'art_gallery',
                  'bridge', 'dressing_room', 'picnic_area', 'beer_hall',
                  'skyscraper', 'bookstore', 'closet', 'television_studio',
                  'stadium/soccer', 'pub/indoor', 'industrial_area', 'art_studio',
-                 'lawn', 'highway', 'coffee_shop', 'booth/indoor', 'martial_arts_gym']
+                 'lawn', 'highway', 'coffee_shop', 'booth/indoor', 'martial_arts_gym',
+                 'church/indoor', 'fountain', 'delicatessen', 'florist_shop/indoor', 'sushi_bar']
+
+N_SCENES = len(SELECTED_TAGS)
 
 N_STREETS = 20
 N_SKIP = 0
