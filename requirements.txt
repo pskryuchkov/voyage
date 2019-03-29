@@ -1,0 +1,13 @@
+selenium==3.13.0
+requests==2.19.1
+numpy==1.16.2
+opencv_python==3.4.1.15
+scipy==1.1.0
+pandas==0.23.3
+plotly==3.1.1
+matplotlib==2.2.2
+torch==0.4.1
+torchvision==0.2.1
+Pillow==5.4.1
+beautifulsoup4==4.7.1
+scikit_learn==0.20.3
