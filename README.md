@@ -1,6 +1,9 @@
 # voyage
 
+<img src="img.png" width="630" align="center">
+
 Scripts for Instagram locations data scraping and interactive city features visualization
+
 
 ### Data collection
 
@@ -12,7 +15,7 @@ Scripts should be executed in the following order
 
 `scrapers/photos_scraper.py -c [city]` scrape Instagram photos
 
-`scrapers/reverse_geocoding.py -c [city]` get street names ([Google Geocoding API](https://developers.google.com/maps/documentation/geocoding/start) token required)
+`scrapers/reverse_geocoding.py -c [city]` get streets names ([Google Geocoding API](https://developers.google.com/maps/documentation/geocoding/start) token required)
 
 `scrapers/wiki_scraper.py -c [city]` scrape wiki about locations, views, etc.
 
