@@ -113,6 +113,8 @@ def tags_rate(dataset):
 
     bx, by = zip(*scenes_rates)
 
+    bx = short_scene_labels(bx)
+
     scenes.draw_scenes_rate(bx, by, hovers)
 
 
@@ -120,7 +122,14 @@ def tags_delta(dataset, opposite_dataset):
     rates_delta = scenes.delta_scenes_rates(dataset.photos_scenes,
                                             opposite_dataset.photos_scenes)
     bx, by = zip(*rates_delta)
+
+    bx = short_scene_labels(bx)
+
     scenes.draw_tags_delta(bx, by)
+
+
+def short_scene_labels(scenes_list):
+    return [x.split("/")[0] for x in scenes_list]
 
 
 def streets_features(dataset):
@@ -138,8 +147,10 @@ def streets_features(dataset):
                                                       streets_list[:consts.N_STREETS],
                                                       sorted_scenes)
 
+    scenes_labels = short_scene_labels(sorted_scenes)
+
     scenes.draw_streets_features(features_matrix, streets_list,
-                                 sorted_scenes, settings.language)
+                                 scenes_labels, settings.language)
 
 
 def tagged_city_map(dataset):

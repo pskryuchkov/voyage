@@ -78,7 +78,7 @@ def separate_indexes(city, opposite_city,
 
 def calc_labels_positions(target_tags_table, opposite_tags_table,
                           indexes, visual_data,
-                          min_dx=20.0, min_dy=10.0):
+                          min_dx=23.0, min_dy=10.0):
 
     def calc_dist(point, other_points):
         if other_points:
@@ -149,7 +149,7 @@ def draw_locations_scatter(locs_x, locs_y,
     def create_scatter(x, y, colors, labels, name, size, opacity):
         return go.Scatter(x=x, y=y,
                           mode='markers',
-                          hoverinfo='text+x+y',
+                          hoverinfo='text',
                           text=labels, name=name,
                           marker=dict(size=size,
                                       color=colors,

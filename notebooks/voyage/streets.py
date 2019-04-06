@@ -87,7 +87,7 @@ def draw_city_map(lat, lon, streets, streets_locations_number,
     hover_func = lambda x, y, z, zz: hover_template.format(x, round3(y), round3(z), zz)
     scatter_hover = list(map(hover_func, streets, lat, lon, streets_locations_number))
 
-    marker_labels = [str(x) if x >= 20 else "" for x in marker_sizes]
+    marker_labels = [str(x) if x >= style.MIN_LABELED_SIZE else "" for x in streets_locations_number]
 
     data = [go.Scattermapbox(
                 lat=lat,

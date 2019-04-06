@@ -112,9 +112,11 @@ def get_wiki_data(street_insta_dict, street_wiki_dict, street_locs_wiki):
             short_labels.append(z)
             xc.append(street_insta_dict[z])
             yc.append(street_wiki_dict[z])
+
+            sorted_labels = sorted(street_locs_wiki[z], key=lambda x: x[1], reverse=True)
             labels_wiki.append('<i>{}</i><br>{}'.format(z,
                                                         "<br>".join(map(tuple_to_str,
-                                                                        street_locs_wiki[z]))))
+                                                                        sorted_labels))))
         else:
             continue
 
@@ -128,44 +130,56 @@ def get_wiki_data(street_insta_dict, street_wiki_dict, street_locs_wiki):
 def draw_insta_wiki_scatter(scatter_x1, scatter_y1, scatter_labels1):
     style = styles.InstaWikiScatterStyle
 
-    data = [go.Scatter(x=scatter_x1, y=scatter_y1,
-                       text=scatter_labels1,
-                       mode='markers',
-                       hoverinfo='text',
-                       name='huge',
-                       textfont=dict(size=style.FONT_SIZE,
-                                     color=style.FONT_COLOR),
-                       marker=dict(color=style.MARKER_COLOR,
-                                   opacity=style.MARKER_OPACITY))]
-
+    
+    min_x, max_x = np.min(scatter_x1), np.max(scatter_x1)
+    min_y, max_y = np.min(scatter_y1), np.max(scatter_y1)
     med_x = np.median(scatter_x1)
     med_y = np.median(scatter_y1)
+
+    left_bound = min_x * (1 - style.AXIS_DELTA)
+    right_bound = max_x * (1 + style.AXIS_DELTA)
+
+    lower_bound = min_y * (1 - style.AXIS_DELTA)
+    upper_bound = max_y * (1 + style.AXIS_DELTA)
 
     lines_style = dict(color=style.LINE_COLOR,
                        width=style.LINE_WIDTH,
                        dash=style.LINE_STYLE)
 
-    shapes = [dict(type='line',
-                   xref='x', yref='paper',
-                   x0=med_x, y0=0,
-                   x1=med_x, y1=1,
-                   line=lines_style),
-              dict(type='line',
-                   xref='paper', yref='y',
-                   x0=0, y0=med_y,
-                   x1=1, y1=med_y,
-                   line=lines_style)]
+    data = [go.Scatter(x=scatter_x1, y=scatter_y1,
+                       text=scatter_labels1,
+                       mode='markers',
+                       hoverinfo='text',
+                       name='streets',
+                       showlegend=True,
+                       textfont=dict(size=style.FONT_SIZE,
+                                     color=style.FONT_COLOR),
+                       marker=dict(color=style.MARKER_COLOR,
+                                   opacity=style.MARKER_OPACITY)),
+
+            go.Scatter(x=[left_bound, right_bound],
+                       y=[med_y, med_y],
+                       name='median',
+                       mode='lines',
+                       hoverinfo='none',
+                       showlegend=True,
+                       line=lines_style),
+
+            go.Scatter(x=[med_x, med_x],
+                       y=[lower_bound, upper_bound],
+                       mode='lines',
+                       hoverinfo='none',
+                       showlegend=False,
+                       line=lines_style)]
 
     layout = go.Layout(width=style.PLOT_WIDTH,
                        height=style.PLOT_HEIGHT,
                        margin=style.MARGIN,
                        xaxis=dict(title='insta',
-                                  type=style.AXES_TYPE),
+                                  type=style.AXIS_TYPE),
                        yaxis=dict(title='wiki',
-                                  type=style.AXES_TYPE),
-                       hovermode='closest',
-                       shapes=shapes,
-                       showlegend=False)
+                                  type=style.AXIS_TYPE),
+                       hovermode='closest')
 
     fig = go.Figure(data=data, layout=layout)
     py.iplot(fig, show_link=False)

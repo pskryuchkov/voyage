@@ -3,13 +3,14 @@ import plotly.graph_objs as go
 
 class CityMapStyle:
     MARKER_SIZE = 17
-    MARKER_OPACITY = 0.4
+    MARKER_OPACITY = 0.35
     MARKER_COLOR = 'red'
     ZOOM = 12
     MAP_WIDTH = 800
     MAP_HEIGHT = 470
     MAX_MARKER_SIZE = 40
-    MIN_MARKER_SIZE = 3
+    MIN_MARKER_SIZE = 4
+    MIN_LABELED_SIZE = 20
     MIN_LOCATIONS = 15
     MARGIN = dict(l=0, r=30, b=0, t=20)
 
@@ -44,15 +45,16 @@ class StreetAreaCombine:
 
 class InstaWikiScatterStyle:
     PLOT_HEIGHT = 400
-    PLOT_WIDTH = 550
-    MARKER_OPACITY = 0.8
+    PLOT_WIDTH = 600
+    MARKER_OPACITY = 0.6
     MARKER_COLOR = 'dodgerblue'
     FONT_COLOR = 'lightgrey'
     FONT_SIZE = 8
     LINE_STYLE = 'dash'
     LINE_COLOR = 'grey'
     LINE_WIDTH = 2
-    AXES_TYPE = 'log'
+    AXIS_TYPE = 'log'
+    AXIS_DELTA = 0.2
     MARGIN = go.layout.Margin(t=30, b=50, l=50, r=30)
 
 
@@ -114,14 +116,13 @@ class StreetsFeaturesPlotStyle:
 
 class TaggedCityMapStyle:
     MARKER_SIZE = 17
-    MARKER_OPACITY = 0.3
+    MARKER_OPACITY = 0.35
     MARKER_COLOR = 'dodgerblue'
-    #ZOOM = 12
     MARGIN = dict(l=0, r=30, b=0, t=20)
     MAP_WIDTH = 800
     MAP_HEIGHT = 470
     MAX_MARKER_SIZE = 40
-    MIN_MARKER_SIZE = 3
+    MIN_MARKER_SIZE = 4
     FONT_SIZE = 12
     FONT_COLOR = 'royalblue'
     MIN_LOCATIONS = 6
